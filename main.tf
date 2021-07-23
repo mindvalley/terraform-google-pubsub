@@ -34,22 +34,21 @@ resource "google_project_iam_member" "token_creator_binding" {
 }
 
 resource "google_pubsub_topic_iam_member" "push_topic_binding" {
-  for_each = var.create_topic ? { for i in var.push_subscriptions : i.name => i } : {}
-
-  project = var.project_id
-  topic   = lookup(each.value, "dead_letter_topic", "projects/${var.project_id}/topics/${var.topic}")
-  role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:${local.pubsub_svc_account_email}"
+  for_each = { for i in var.push_subscriptions : i.name => i }
+  project  = var.project_id
+  topic    = lookup(each.value, "dead_letter_topic", each.value.topic_name)
+  role     = "roles/pubsub.publisher"
+  member   = "serviceAccount:${local.pubsub_svc_account_email}"
   depends_on = [
     google_pubsub_topic.topic,
   ]
 }
 
 resource "google_pubsub_topic_iam_member" "pull_topic_binding" {
-  for_each = var.create_topic ? { for i in var.pull_subscriptions : i.name => i } : {}
+  for_each = { for i in var.pull_subscriptions : i.name => i }
 
   project = var.project_id
-  topic   = lookup(each.value, "dead_letter_topic", "projects/${var.project_id}/topics/${var.topic}")
+  topic   = lookup(each.value, "dead_letter_topic", each.value.topic_name)
   role    = "roles/pubsub.publisher"
   member  = "serviceAccount:${local.pubsub_svc_account_email}"
   depends_on = [
@@ -97,10 +96,10 @@ resource "google_pubsub_topic" "topic" {
 }
 
 resource "google_pubsub_subscription" "push_subscriptions" {
-  for_each = var.create_topic ? { for i in var.push_subscriptions : i.name => i } : {}
+  for_each = { for i in var.push_subscriptions : i.name => i }
 
   name    = each.value.name
-  topic   = google_pubsub_topic.topic.0.name
+  topic   = var.create_topic ? google_pubsub_topic.topic.0.name : each.value.topic_name
   project = var.project_id
   labels  = var.subscription_labels
   ack_deadline_seconds = lookup(
@@ -175,10 +174,10 @@ resource "google_pubsub_subscription" "push_subscriptions" {
 }
 
 resource "google_pubsub_subscription" "pull_subscriptions" {
-  for_each = var.create_topic ? { for i in var.pull_subscriptions : i.name => i } : {}
+  for_each = { for i in var.pull_subscriptions : i.name => i }
 
   name    = each.value.name
-  topic   = google_pubsub_topic.topic.0.name
+  topic   = var.create_topic ? google_pubsub_topic.topic.0.name : each.value.topic_name
   project = var.project_id
   labels  = var.subscription_labels
   ack_deadline_seconds = lookup(
@@ -236,7 +235,7 @@ resource "google_pubsub_subscription" "pull_subscriptions" {
 }
 
 resource "google_pubsub_subscription_iam_member" "pull_subscription_sa_binding_subscriber" {
-  for_each = var.create_topic ? { for i in var.pull_subscriptions : i.name => i if lookup(i, "service_account", null) != null } : {}
+  for_each = { for i in var.pull_subscriptions : i.name => i if lookup(i, "service_account", null) != null }
 
   project      = var.project_id
   subscription = each.value.name
@@ -248,7 +247,7 @@ resource "google_pubsub_subscription_iam_member" "pull_subscription_sa_binding_s
 }
 
 resource "google_pubsub_subscription_iam_member" "pull_subscription_sa_binding_viewer" {
-  for_each = var.create_topic ? { for i in var.pull_subscriptions : i.name => i if lookup(i, "service_account", null) != null } : {}
+  for_each = { for i in var.pull_subscriptions : i.name => i if lookup(i, "service_account", null) != null }
 
   project      = var.project_id
   subscription = each.value.name
