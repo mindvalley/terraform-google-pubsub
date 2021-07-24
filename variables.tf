@@ -30,6 +30,12 @@ variable "create_topic" {
   default     = true
 }
 
+variable "allowed_publishers" {
+  type        = list(string)
+  description = "The list of allowed publishers"
+  default     = []
+}
+
 variable "topic_labels" {
   type        = map(string)
   description = "A map of labels to assign to the Pub/Sub topic"

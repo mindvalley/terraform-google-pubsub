@@ -80,6 +80,14 @@ resource "google_pubsub_subscription_iam_member" "push_subscription_binding" {
   ]
 }
 
+resource "google_pubsub_topic_iam_member" "topic_publisher_sa_binding" {
+  for_each = var.create_topic ? toset(var.allowed_publishers) : []
+  project  = var.project_id
+  topic    = google_pubsub_topic.topic.0.name
+  role     = "roles/pubsub.publisher"
+  member   = each.key
+}
+
 resource "google_pubsub_topic" "topic" {
   count        = var.create_topic ? 1 : 0
   project      = var.project_id
