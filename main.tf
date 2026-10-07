@@ -42,6 +42,13 @@ resource "google_pubsub_topic_iam_member" "push_topic_binding" {
   depends_on = [
     google_pubsub_topic.topic,
   ]
+
+  # The provider derives project from the topic path, so when the dead
+  # letter topic lives in another project it never matches var.project_id
+  # and every plan forces a destroy/recreate of this binding.
+  lifecycle {
+    ignore_changes = [project]
+  }
 }
 
 resource "google_pubsub_topic_iam_member" "pull_topic_binding" {
@@ -54,6 +61,13 @@ resource "google_pubsub_topic_iam_member" "pull_topic_binding" {
   depends_on = [
     google_pubsub_topic.topic,
   ]
+
+  # The provider derives project from the topic path, so when the dead
+  # letter topic lives in another project it never matches var.project_id
+  # and every plan forces a destroy/recreate of this binding.
+  lifecycle {
+    ignore_changes = [project]
+  }
 }
 
 resource "google_pubsub_subscription_iam_member" "pull_subscription_binding" {
